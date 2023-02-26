@@ -1,0 +1,2 @@
+sk9822.c:4:6:update_LED_string	32	static
+sk9822.c:36:6:clear_all_LEDs	16	static
