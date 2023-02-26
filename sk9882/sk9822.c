@@ -11,6 +11,7 @@ void update_LED_string(unsigned char *blue_array,unsigned char *red_array, unsig
 
         led_data_frame[1] = 0x16;
 //        led_data_frame[1] = blue_array[i];
+
         led_data_frame[2] = green_array[i];
         led_data_frame[3] = red_array[i];
         if(blue_array[i]+green_array[i]+red_array[i]){
