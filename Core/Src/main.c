@@ -32,6 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define RED_INDEX 5
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -51,6 +52,9 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 int mscount = 0;
+int person_detect = 0;
+char max_red = 255;
+int Frequency = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -62,7 +66,7 @@ static void MX_TIM3_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
-
+void updateRiver(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -116,6 +120,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+      HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
+      HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -406,6 +412,22 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)  // If the interrupt is triggered by channel 1
+    {
+        // Read the IC value
+        int ICValue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+
+        if (ICValue != 0)
+        {
+            Frequency = 48000000/(ICValue+1);
+        }
+        else{Frequency = 0;}
+        HAL_UART_Transmit_IT(&huart1,ICValue,len(ICValue));
+    }
+}
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     //HAL_GPIO_TogglePin(GPIOB, LD2_Pin);
@@ -416,6 +438,28 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             mscount=0;
             HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
 
+    }
+}
+
+
+void updateRiver(void)
+{
+    extern LED_green_array;
+    char temp_array[NUM_LEDS];
+    for(int i=0;i++;i<NUM_LEDS){
+        j = i % NUM_LEDS;
+        temp_array[j] = LED_green_array[i];
+    }
+    memcpy(LED_green_array,temp_array,sizeof(temp_array));
+    if(person_detect){
+
+        for(int i = 0; i<RED_INDEX; i++){
+            red_arr[i] = max_red >> (RED_INDEX - (i % RED_INDEX));
+        }
+        red_arr[RED_INDEX] = max_red;
+        for(int i = RED_INDEX+1; i<10; i++){
+            red_arr[i] = max_red >> (i % RED_INDEX);
+        }
     }
 }
 /* USER CODE END 4 */
