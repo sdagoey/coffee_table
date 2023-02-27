@@ -1,5 +1,13 @@
 #include "sk9882.h"
 
+unsigned char LED_blue_array[NUM_LEDS];
+unsigned char LED_green_array[NUM_LEDS];
+unsigned char LED_red_array[NUM_LEDS];
+extern SPI_HandleTypeDef hspi1;
+static unsigned char start_frame[4] = {0x00,0x00,0x00,0x00};
+static unsigned char end_frame[4] = {0xFF,0xFF,0xFF,0xFF};
+unsigned char global_brighness = 0xE;
+
 void update_LED_string(unsigned char *blue_array,unsigned char *red_array, unsigned char *green_array){
     unsigned char led_data_frame[4];
 //send start frame here

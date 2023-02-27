@@ -62,7 +62,7 @@ main-build: Coffee_table.elf secondary-outputs
 
 # Tool invocations
 Coffee_table.elf: $(OBJS) $(USER_OBJS) D:\workspace\Coffee_table\STM32F042K6TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Coffee_table.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0 -T"D:\workspace\Coffee_table\STM32F042K6TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Coffee_table.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "Coffee_table.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0 -T"D:\workspace\Coffee_table\STM32F042K6TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Coffee_table.map" -Wl,--gc-sections -Wl,--verbose -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

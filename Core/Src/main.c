@@ -55,6 +55,10 @@ int mscount = 0;
 int person_detect = 0;
 char max_red = 255;
 int Frequency = 0;
+
+extern unsigned char LED_blue_array[NUM_LEDS];
+extern unsigned char LED_green_array[NUM_LEDS];
+extern unsigned char LED_red_array[NUM_LEDS];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -113,7 +117,7 @@ int main(void)
       LED_green_array[i] = 0;
       LED_red_array[i] = 0;
   }
-  update_LED_String(LED_blue_array,LED_red_array,LED_green_array);
+  //update_LED_String(LED_blue_array,LED_red_array,LED_green_array);
   /* USER CODE END 2 */
 
   /* Infinite loop */
