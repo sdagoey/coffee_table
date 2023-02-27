@@ -1,6 +1,5 @@
 #include "sk9882.h"
 
-
 void update_LED_string(unsigned char *blue_array,unsigned char *red_array, unsigned char *green_array){
     unsigned char led_data_frame[4];
 //send start frame here
@@ -38,7 +37,7 @@ void clear_all_LEDs(){
     HAL_SPI_Transmit_IT(&hspi1,(unsigned char *) &start_frame,4);
     HAL_Delay(1000);
     unsigned char led_data_frame[4];
-    for(int i = 0; i < 144; i++){
+    for(int i = 0; i < NUM_LEDS; i++){
         led_data_frame[0] = (0x0<<4) | 0x00;
         //HAL_SPI_Transmit_IT(&hspi1,(unsigned char *) &led_data_frame[0],1);
         led_data_frame[1] = 0x00;

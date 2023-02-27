@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <sk9882.h>
+
 
 /* USER CODE END Includes */
 
@@ -417,14 +417,14 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
     if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)  // If the interrupt is triggered by channel 1
     {
         // Read the IC value
-        int ICValue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+        uint8_t ICValue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
 
         if (ICValue != 0)
         {
             Frequency = 48000000/(ICValue+1);
         }
         else{Frequency = 0;}
-        HAL_UART_Transmit_IT(&huart1,ICValue,len(ICValue));
+        HAL_UART_Transmit_IT(&huart1,&ICValue,sizeof(ICValue));
     }
 }
 
@@ -444,21 +444,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 void updateRiver(void)
 {
-    extern LED_green_array;
+    extern unsigned char LED_green_array[NUM_LEDS];
+    extern unsigned char LED_red_array[NUM_LEDS];
     char temp_array[NUM_LEDS];
-    for(int i=0;i++;i<NUM_LEDS){
-        j = i % NUM_LEDS;
+    for(int i=0; i<NUM_LEDS; i++){
+        int j = i % NUM_LEDS;
         temp_array[j] = LED_green_array[i];
     }
     memcpy(LED_green_array,temp_array,sizeof(temp_array));
     if(person_detect){
-
+        //Set Red index to max brightness, 1/2 it for every index away
         for(int i = 0; i<RED_INDEX; i++){
-            red_arr[i] = max_red >> (RED_INDEX - (i % RED_INDEX));
+            LED_red_array[i] = max_red >> (RED_INDEX - (i % RED_INDEX));
         }
-        red_arr[RED_INDEX] = max_red;
+        LED_red_array[RED_INDEX] = max_red;
         for(int i = RED_INDEX+1; i<10; i++){
-            red_arr[i] = max_red >> (i % RED_INDEX);
+            LED_red_array[i] = max_red >> (i % RED_INDEX);
         }
     }
 }
