@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
 
 /* USER CODE END Includes */
 
@@ -33,6 +33,9 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define RED_INDEX 5
+#define IDLE 0
+#define DONE 1
+#define TO_STRING(val) #val
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -54,8 +57,16 @@ UART_HandleTypeDef huart1;
 int mscount = 0;
 int person_detect = 0;
 char max_red = 255;
-int Frequency = 0;
 
+char* teststr = "test";
+int every_other = 0;
+uint32_t Frequency = 0;
+uint32_t Duty = 0;
+uint8_t over_counter = 0;
+uint32_t ticks = 0;
+unit32_t T1 = 0;
+unit32_t T2 = 0;
+uint8_t State = IDLE;
 extern unsigned char LED_blue_array[NUM_LEDS];
 extern unsigned char LED_green_array[NUM_LEDS];
 extern unsigned char LED_red_array[NUM_LEDS];
@@ -75,7 +86,17 @@ void updateRiver(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void transmitString (char * string1){
+    HAL_UART_Transmit(&huart1, string1, strlen(string1),0xFFFF);
+}
 
+void transmitVar(uint32_t var1){
+    char* result[10];
+    sprintf(result,"%d",var1);
+    transmitString(" : ");
+    transmitString(result);
+    transmitString("\n");
+}
 /* USER CODE END 0 */
 
 /**
@@ -112,6 +133,9 @@ int main(void)
   MX_USART1_UART_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
+  HAL_TIM_Base_Start_IT(&htim1);
+  HAL_TIM_Base_Start_IT(&htim3);
+  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_1);   // input capture
   for(uint16_t i = 0; i < NUM_LEDS; i++){
       LED_blue_array[i] = 0;
       LED_green_array[i] = 0;
@@ -124,8 +148,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-      HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
-      HAL_Delay(1000);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -242,10 +265,10 @@ static void MX_SPI1_Init(void)
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -281,12 +304,12 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
+  htim1.Init.Prescaler = 48;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
+  htim1.Init.Period = 1000;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
-  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
@@ -320,6 +343,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 0 */
 
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_IC_InitTypeDef sConfigIC = {0};
 
@@ -327,11 +351,20 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 0;
+  htim3.Init.Prescaler = 4;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 65535;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_IC_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
@@ -372,7 +405,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 38400;
+  huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -404,10 +437,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LED0_Pin|LED1_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PA0 PA1 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+  /*Configure GPIO pins : LED0_Pin LED1_Pin */
+  GPIO_InitStruct.Pin = LED0_Pin|LED1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -418,31 +451,37 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
-    if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)  // If the interrupt is triggered by channel 1
-    {
-        // Read the IC value
-        uint8_t ICValue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
-
-        if (ICValue != 0)
+    if (htim->Instance == TIM3){
+        if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)  // If the interrupt is triggered by channel 1
         {
-            Frequency = 48000000/(ICValue+1);
+            // Read the IC value
+            uint32_t ICValue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+            Frequency = 0;
+            Duty = (HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1) *100)/ICValue;
+            if (ICValue != 0)
+            {
+                Frequency = 48000000/(ICValue+1);
+            }
+            //transmitVar(ICValue);
+            //transmitString(Frequency);
         }
-        else{Frequency = 0;}
-        HAL_UART_Transmit_IT(&huart1,&ICValue,sizeof(ICValue));
     }
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-    //HAL_GPIO_TogglePin(GPIOB, LD2_Pin);
-    mscount += 1;
-    //udp_scratch_connect();
+   if(htim->Instance == TIM1){
+       //HAL_GPIO_TogglePin(GPIOB, LD2_Pin);
+       mscount += 1;
+       if(mscount == 1000){
+           mscount=0;
+           HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
+           transmitString(TO_STRING(Frequency));
+           transmitVar(Frequency);
 
-    if(mscount == 1000){
-            mscount=0;
-            HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
+       }
+   }
 
-    }
 }
 
 
